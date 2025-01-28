@@ -1,6 +1,4 @@
 global:
-  external_labels:
-    site: prod
   scrape_interval: 5s
 
 scrape_configs:
