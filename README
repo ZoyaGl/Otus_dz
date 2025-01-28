@@ -1,4 +1,6 @@
-На первой виртуальной машине я установила open source CMS - WordPress. Были установлены компоненты:  nginx, php-fpm и MySQL. На эту же виртуальную машину были установлены экспортеры: Node Exporter, Nginx Prometheus Exporter, Prometheus MySQL Exporter, php-fpm exporter и Blackbox Exporter.
+На первой виртуальной машине я установила open source CMS - WordPress.
+ Были установлены компоненты:  nginx, php-fpm и MySQL.
+ На эту же виртуальную машину были установлены экспортеры: Node Exporter, Nginx Prometheus Exporter, Prometheus MySQL Exporter, php-fpm exporter и Blackbox Exporter.
 На второй виртуальной машине я установила Prometheus и еще один Node Exporter. 
 Для установки использовались бинарные файлы, docker не использовался.
 В дальнейшем на первую виртуальную машину были установлены Alertmanager, Grafana, VictoriaMetrics.
