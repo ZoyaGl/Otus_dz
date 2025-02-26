@@ -1,0 +1,4 @@
+Установлен TICK stack:  Telegraf, Influxdb, Chronograf, Kapacitor. 
+В Telegraf настроен сбор метрик с базы данных MySQL, Nginx, php-fpm. 
+Настроено хранение собранных метрик в influxdb. 
+В Chronograf  созданы дашборды, в конфиге kapacitor настроена отправка алертов в telegram
