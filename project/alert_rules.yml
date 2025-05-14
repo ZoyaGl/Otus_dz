@@ -1,0 +1,163 @@
+groups:
+- name: test
+  rules:
+  - alert: DeadMansSwitch
+    expr: vector(1)
+    labels:
+      severity: critical
+    annotations:
+      summary: "Тестовый алерт: Alertmanager работает"
+      description: "Этот алерт всегда активен, тестовая проверка работы мониторинга!"
+
+- name: postgres-alerts
+  rules:
+  # Доступность
+  - alert: PostgreSQLDown
+    expr: pg_up == 0
+    for: 2m
+    labels:
+      severity: critical
+      component: postgresql
+    annotations:
+      summary: "PostgreSQL недоступен"
+      description: "Экземпляр {{ $labels.instance }} не отвечает более 2 минут."
+      runbook: "https://wiki/postgres-recovery"
+
+  # Репликация
+  - alert: HighReplicationLag
+    expr: pg_replication_lag_seconds > 60
+    for: 5m
+    labels:
+      severity: critical
+      component: postgresql
+    annotations:
+      summary: "Высокая задержка репликации"
+      description: "Задержка репликации на {{ $labels.instance }}: {{ $value }} секунд."
+
+#  - alert: ReplicationNotActive
+#    expr: pg_replication_is_replica == 0
+#    for: 3m
+#    labels:
+#      severity: critical
+#      component: postgresql
+#    annotations:
+#      summary: "Репликация остановлена"
+#      description: "Реплика {{ $labels.instance }} не активна."
+
+  # Ресурсы
+  - alert: DiskSpaceWarning
+    expr: (1 - (pg_database_disk_available_bytes / pg_database_disk_total_bytes)) * 100 > 90
+    for: 10m
+    labels:
+      severity: warning
+      component: postgresql
+    annotations:
+      summary: "Мало места на диске ({{ $value }}%)"
+      description: "На {{ $labels.instance }} осталось менее 10% свободного места."
+
+  - alert: DiskSpaceCritical
+    expr: (1 - (pg_database_disk_available_bytes / pg_database_disk_total_bytes)) * 100 > 95
+    for: 5m
+    labels:
+      severity: critical
+      component: postgresql
+    annotations:
+      summary: "Критически мало места на диске ({{ $value }}%)"
+
+  - alert: HighConnections
+    expr: pg_stat_activity_count / pg_settings_max_connections * 100 > 80
+    for: 5m
+    labels:
+      severity: warning
+      component: postgresql
+    annotations:
+      summary: "Высокая нагрузка подключений ({{ $value }}%)"
+
+- name: etcd Alerts
+  rules:
+  # Доступность
+  - alert: EtcdNodeDown
+    expr: etcd_server_up == 0
+    for: 1m
+    labels:
+      severity: critical
+      component: etcd
+    annotations:
+      summary: "Узел etcd недоступен: {{ $labels.instance }}"
+
+  # Кворум
+  - alert: EtcdNoLeader
+    expr: etcd_server_has_leader == 0
+    for: 1m
+    labels:
+      severity: critical
+      component: etcd
+    annotations:
+      summary: "Кворум etcd потерян"
+
+  - alert: EtcdClusterAtRisk
+    expr: count(etcd_server_has_leader) < ((count(etcd_server_has_leader) / 2) + 1)
+    labels:
+      severity: critical
+      component: etcd
+    annotations:
+      summary: "Кворум etcd под угрозой"
+
+  # Производительность
+  - alert: EtcdHighDiskLatency
+    expr: rate(etcd_disk_wal_fsync_duration_seconds_sum[5m]) > 1
+    for: 5m
+    labels:
+      severity: warning
+      component: etcd
+    annotations:
+      summary: "Высокая задержка диска etcd"
+
+  # Состояние кластера
+  - alert: EtcdMembersChanged
+    expr: changes(etcd_cluster_members[15m]) > 0
+    labels:
+      severity: critical
+      component: etcd
+    annotations:
+      summary: "Состав кластера etcd изменился"
+
+- name: Patroni Alerts
+  rules:
+  # Доступность
+  - alert: PatroniProcessDown
+    expr: patroni_process_healthy == 0
+    for: 2m
+    labels:
+      severity: critical
+      component: patroni
+    annotations:
+      summary: "Процесс Patroni не запущен"
+
+  # Роль узла
+  - alert: UnexpectedRole
+    expr: patroni_role{instance=~"192.168.1.10(:.*)?"} != 1
+    for: 3m
+    labels:
+      severity: critical
+      component: patroni
+    annotations:
+      summary: "Узел Patroni в неожиданной роли"
+
+  # Состояние кластера
+  - alert: InsufficientReplicas
+    expr: patroni_replicas_running < 2
+    for: 10m
+    labels:
+      severity: warning
+      component: patroni
+    annotations:
+      summary: "Недостаточно реплик в кластере"
+
+  - alert: FrequentLeaderSwitches
+    expr: increase(patroni_leader_switches_total[1h]) > 3
+    labels:
+      severity: warning
+      component: patroni
+    annotations:
+      summary: "Слишком частые смены лидера"

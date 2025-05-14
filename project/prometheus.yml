@@ -1,0 +1,54 @@
+global:
+  external_labels:
+    server_name: prometheus
+  scrape_interval: 10s
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - 192.168.122.128:9093
+rule_files:
+  - /etc/prometheus/alert_rules.yml
+
+remote_write:
+  - url: http://192.168.122.128:8428/api/v1/write
+    queue_config:
+      max_samples_per_send: 10000
+      capacity: 20000
+      max_shards: 30
+
+scrape_configs:
+  - job_name: 'prometheus_master'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['localhost:9090']
+  - job_name: 'node_exporter'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['192.168.122.130:9100', '192.168.122.129:9100', 'localhost:9100']
+  - job_name: 'postgres_exporters'
+    static_configs:
+      - targets: ['192.168.122.129:9187', '192.168.122.128:9187', '192.168.122.130:9187']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+  - job_name: 'etcd'
+    scrape_interval: 10s
+    scheme: 'https'
+    tls_config:
+      ca_file: '/etc/prometheus/.tls/ca.crt'
+      cert_file: '/etc/prometheus/.tls/client.crt'
+      key_file: '/etc/prometheus/.tls/client.key'
+    static_configs:
+      - targets: ['192.168.122.130:2379', '192.168.122.129:2379', '192.168.122.128:2379']
+  - job_name: 'patroni'
+    scrape_interval: 10s
+    scheme: 'https'
+    tls_config:
+      insecure_skip_verify: true
+    static_configs:
+      - targets: ['192.168.122.130:8008', '192.168.122.129:8008', 'localhost:8008']
+  - job_name: 'victoriametrics'
+    static_configs:
+      - targets: ['192.168.122.128:8428']
